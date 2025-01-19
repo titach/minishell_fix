@@ -12,23 +12,6 @@
 
 #include "minishell.h"
 
-int select_builtins(t_cmd *cmd)
-{
-	if (ft_strncmp(cmd->command[0], "echo", 4) == 0 && ft_strlen(cmd->command[0]) == 4)
-		return (10);
-	else if (ft_strncmp(cmd->command[0], "pwd", 3) == 0 && ft_strlen(cmd->command[0]) == 3 )
-		return (50);
-	else if (ft_strncmp(cmd->command[0], "export", 6) == 0 && ft_strlen(cmd->command[0]) == 6)
-		return (10);
-	else if (ft_strncmp(cmd->command[0], "cd", 2) == 0 && ft_strlen(cmd->command[0]) == 2 )
-		return (10);
-	else if (ft_strncmp(cmd->command[0], "unset", 5) == 0 && ft_strlen(cmd->command[0]) == 5)
-		return (10);
-	else if (ft_strncmp(cmd->command[0], "exit", 4) == 0 && ft_strlen(cmd->command[0]) == 4)
-		return (10);
-	return (0);
-}
-
 int check_file(t_file *file)
 {
 	if (file->re == 1)
@@ -159,5 +142,6 @@ int    handle_all(t_phaser *sh, t_cmd *div, int flag, int hd)
 		flag = check_command(sh, div);
 	if (flag == 0 && hd == 1)
 		join_heredoc(div, -1);
+	// printf("%d\n", flag);
 	return (flag);
 }

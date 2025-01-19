@@ -84,10 +84,10 @@ void    do_echo(t_phaser *sh, t_cmd *div)
 
 void    do_builtins(t_phaser *sh, t_cmd *div)
 {
-    if (ft_strncmp(div->command[0], "echo", ft_strlen(div->command[0])) == 0)
+    if (select_builtins(div) == 10)
         do_echo(sh, div);
     else if (ft_strncmp(div->command[0], "env", ft_strlen(div->command[0])) == 0)
         do_env(sh, div);
-    else if (ft_strncmp(div->command[0], "export", ft_strlen(div->command[0])) == 0)
+    else if (select_builtins(div) == 20)
         do_export(sh, div);
 }

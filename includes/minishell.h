@@ -48,7 +48,7 @@ typedef struct s_phaser
 	t_cmd	*start;
 	char	**sep;
 	char	**env;
-	int	export;
+	int		export;
 	int		pipe;
 	int		exit;
 	int		hd;
@@ -82,6 +82,8 @@ int	count_imp(char *input, char c);
 //process
 void    start_process(t_phaser *sh, t_cmd *div, int i, int j);
 //------------builtins------------//
+//builtins
+int select_builtins(t_cmd *cmd);
 //echo
 void    do_builtins(t_phaser *sh, t_cmd *div);
 //env

@@ -162,7 +162,6 @@ void	get_shell_data(t_phaser *sh, char **en, int e)
 {
 	sh->start = NULL;
 	sh->sep = NULL;
-	// sh->export = "/tmp/exp_file";
 	sh->export = 0;
 	sh->pipe = 0;
 	sh->exit = 0;

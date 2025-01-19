@@ -52,6 +52,7 @@ void    export_stdout(t_phaser *sh, int i)
         write(fd, "declare -x ", 11);
         tmp = ft_split(tmp_en[i], 11);
         write(fd, tmp[0], ft_strlen(tmp[0]));
+        write(fd, "=", 1);
         write(fd, "\"", 1);
         if (tmp[1] != NULL)
             write(fd, tmp[1], ft_strlen(tmp[1]));
@@ -90,25 +91,25 @@ void    export_stderr(t_cmd *div, int i)
 
 void    do_export(t_phaser *sh, t_cmd *div)
 {
-    printf("main exp\n");
+    // printf("main exp\n");
     if (!div->command[1])
     {
-        printf("main exp\n");
+        // printf("main exp\n");
         export_stdout(sh, 0);
         div->execute[2] = "cat /tmp/exp_file | sort";
     }
     else
     {
-        printf("%s\n", div->command[2]);
+        // printf("%s\n", div->command[2]);
         export_stderr(div, 0);
-        printf("%s\n", div->command[2]);
+        // printf("%s\n", div->command[2]);
     }
-    printf("%s\n", div->command[2]);
-    if (ft_strnstr(div->command[2], "export", ft_strlen(div->command[2])))
-    {
-        printf("main expppp\n");
-        sh->export = 1;
-    }
+    // printf("%s\n", div->command[2]);
+    // if (ft_strnstr(div->command[2], "export", ft_strlen(div->command[2])))
+    // {
+    //     // printf("main expppp\n");
+    //     sh->export = 1;
+    // }
 }
 
 

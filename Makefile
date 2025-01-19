@@ -8,9 +8,7 @@ HEADERS = minishell.h
 MAIN    = main.c utils.c process.c
 PHASER = phaser.c heredoc.c syntax.c
 HANDLE = error_func.c all_error.c
-BUILTINS = echo.c env.c export.c
-# BUILTINS = exit.c env.c unset.c
-# HANDLE = check_cmd.c
+BUILTINS = builtins.c echo.c env.c export.c
 
 SRCS = $(addsuffix , $(addprefix srcs/main/, $(MAIN))) \
 		$(addsuffix , $(addprefix srcs/phaser/, $(PHASER))) \
