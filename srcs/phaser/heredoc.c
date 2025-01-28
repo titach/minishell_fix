@@ -12,7 +12,7 @@
 
 #include "minishell.h"
 
-char	*reverse_redirect(int re)
+static char	*reverse_redirect(int re)
 {
 	if (re == 1)
 		return (" < ");
@@ -36,7 +36,7 @@ void	join_heredoc(t_cmd *div, int i)
 		tmp = ft_strdup(div->execute[2]);
 		free(div->execute[2]);
 		space = ft_strjoin(" ", div->command[i]);
-		div->execute[2] = ft_strjoin(tmp, space);//add
+		div->execute[2] = ft_strjoin(tmp, space);
 		free(space);
 		free(tmp);
 	}

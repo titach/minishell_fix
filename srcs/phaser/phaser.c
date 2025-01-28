@@ -12,220 +12,118 @@
 
 #include "minishell.h"
 
-void    phaser_space(char *sep, t_cmd *div, int i, int j)
+static int	count_imp(char *input, char c)
 {
-	char q;
+	int	i;
+	int	j;
 
-	while (sep[++i])
+	i = 0;
+	j = 0;
+	while (input[i])
 	{
-		if (sep[i] == 34 || sep[i] == 39)
-		{
-			q = sep[i];
-			while (sep[++i] && sep[i] != q)
-			{
-				if (sep[i] == ' ')
-					sep[i] = 8;
-			}
-		}
+		if (input[i] == c)
+			j++;
+		i++;
 	}
-	div->loaded = ft_split(sep, ' ');
-	i = -1;
-	while (div->loaded[++i])
-	{
-		j = -1;
-		while (div->loaded[i][++j])
-		{
-			if (div->loaded[i][j] == 8)
-				div->loaded[i][j] = ' ';
-		}
-	}
+	return (j);
 }
 
-int find_redirect(char *tmp, int *i)
+int	search_dollar_sign(char *tmp, int i)
 {
-	if (*i > 0 && tmp[*i] == '<' && tmp[(*i) - 1] == '<')
-	{
-		(*i)--;
-		return (4);
-	}
-	else if (*i > 0 && tmp[*i] == '>' && tmp[(*i) - 1] == '>')
-	{
-		(*i)--;
-		return (3);
-	}
-	else if (tmp[*i] == '>')
-		return (2);
-	else if (tmp[*i] == '<')
-		return (1);
-	return (0);
-}
-
-char    replace_imp(char m)
-{
-	if (m == '<')
-		return (8);
-	else if (m == '>')
-		return (9);
-	return (10);
-}
-
-
-int	last_string(char end)
-{
-	if (end == ' ' || end == '<' || end == '>')
-		return (1);
-	return (0);
-}
-
-int count_lengt(char *tmp, int i, char *file)
-{
-	int count;
-	char    q;
+	int		count;
+	char	q;
 
 	count = 0;
-	while (tmp[++i] && last_string(tmp[i]) == 0)
+	while (tmp[++i])
 	{
 		if (tmp[i] == 34 || tmp[i] == 39)
 		{
 			q = tmp[i];
 			while (tmp[++i] && tmp[i] != q)
 			{
-				file[count] = tmp[i];
-				count++;
+				if (q == 34 && tmp[i] == '$' && tmp[i + 1] != ' '
+					&& tmp[i + 1] != 34 && tmp[i + 1] != 39 && tmp[i + 1])
+					count++;
 			}
 		}
-		else
-		{
-			file[count] = tmp[i];
+		if (tmp[i] == '$' && tmp[i + 1] != ' ' && tmp[i + 1])
 			count++;
-		}
 	}
-	file[count] = '\0';
 	return (count);
 }
 
-char    *file_name(char *tmp, int i, bool fc)
+void	data_execute(t_phaser *sh, t_cmd *div, int i)
 {
-	char *file;
-	char	*flag;
+	char	*tmp;
+	int		count;
+	char	*dup[4];
 
-	if (tmp[i] == '<' || tmp[i] == '>')
-		i++;
-	while (tmp[i] && tmp[i] == ' ' && fc == true)
-		i++;
-	flag = ft_strdup(tmp);
-	file =  malloc(sizeof(char) * (count_lengt(tmp, i - 1, flag) + 1));
-	//if (!file)
-	//
-	free(flag);
-	i = count_lengt(tmp, i - 1, file);
-	i = -1;
-	while (file[++i])
+	count = search_dollar_sign(sh->sep[i], -1);
+	if (count == 0)
+		tmp = ft_strdup(sh->sep[i]);
+	else
+		tmp = make_env_var(sh, sh->sep[i], count, dup);
+	check_redirect(tmp, div, -1);
+	free(tmp);
+	div->execute[0] = "sh";
+	div->execute[1] = "-c";
+	count = -1;
+	while (sh->sep[i][++count])
 	{
-		if (file[i] == 8)
-			file[i] = '<';
-		else if (file[i] == 9)
-			file[i] = '>';
-		else if (file[i] == 10)
-			file[i] = ' ';
+		if (sh->sep[i][count] == '<' && sh->sep[i][count - 1] == '<'
+			&& sh->sep[i][count - 2] == '<' && count > 1)
+			sh->sep[i][count] = ' ';
 	}
-	// dollar_sign(file);
-	return (file);
+	div->execute[2] = sh->sep[i];
+	div->execute[3] = NULL;
+	div->pipe = sh->start;
+	sh->start = div;
 }
 
-char return_imp(char m)
+void	check_pipe(char *input, t_phaser *sh, int i, int j)
 {
-	if (m == 8)
-		return ('<');
-	else if (m == 9)
-		return ('>');
-	return (' ');
-}
+	char	q;
 
-void	phaser_command(char *tmp, t_cmd *div, int i)
-{
-	while (tmp[++i])
+	while (input[++i])
 	{
-		if (tmp[i] == '<' || tmp[i] == '>')
+		if (input[i] == 34 || input[i] == 39)
 		{
-			while (tmp[i] && (tmp[i] == '<' || tmp[i] == '>'))
-				tmp[i++] = ' ';
-			while (tmp[i] == ' ')
-				i++;
-			while (tmp[i] && tmp[i] != ' ')
-				tmp[i++] = ' ';
-		}
-	}
-	div->loaded = ft_split(tmp, ' ');
-	div->command = malloc(sizeof(char *) * (ft_strlen2d(div->loaded) + 1));
-	i = -1;
-	while (div->loaded[++i])
-		div->command[i] = file_name(div->loaded[i], 0, 0);
-	div->command[i] = NULL;
-	ft_free_split(div->loaded);
-}
-
-void    check_redirect(char *tmp, t_cmd *div, int i)
-{
-	char    q;
-	t_file  *file;
-
-	while (tmp[++i])
-	{
-		if (tmp[i] == 34 || tmp[i] == 39)
-		{
-			q = tmp[i];
-			while (tmp[++i] && tmp[i] != q)
+			q = input[i];
+			while (input[++i] && input[i] != q)
 			{
-				if (tmp[i] == '<' || tmp[i] == '>' || tmp[i] == ' ')
-					tmp[i] = replace_imp(tmp[i]);
+				if (input[i] == '|')
+					input[i] = 9;
 			}
 		}
 	}
-	i = ft_strlen(tmp);
-	while (--i >= 0)
+	sh->sep = ft_split(input, '|');
+	sh->pipe = count_imp(input, '|') + 1;
+	while (sh->sep[++j])
 	{
-		if (tmp[i] == '<' || tmp[i] == '>')
+		i = -1;
+		while (sh->sep[j][++i])
 		{
-			file = (t_file *)malloc(sizeof(t_file));
-			//if (!file)
-			//exit
-			file->re = find_redirect(tmp, &i);
-			file->name = file_name(tmp, i + 1, 1);
-			file->next = div->file;
-			div->file = file;
+			if (sh->sep[j][i] == 9)
+				sh->sep[j][i] = '|';
 		}
 	}
-	phaser_command(tmp, div, -1);
 }
 
-	// printf("%d\n", count_redirect(sep, -1, 0));  < out ls > in -l
-void    start_phaser(t_phaser *sh, int i)
+void	start_phaser(char *input, t_phaser *sh, int i)
 {
-	t_cmd   *div;
-	char 	*tmp;
+	t_cmd	*div;
 
+	check_pipe(input, sh, -1, -1);
 	while (sh->sep[i])
 		i++;
 	sh->start = NULL;
 	while (--i >= 0)
 	{
 		div = (t_cmd *)malloc(sizeof(t_cmd));
-		//if (!div)
-		//
+		if (!div)
+			return ;
 		div->file = NULL;
-		tmp = ft_strdup(sh->sep[i]);
-		check_redirect(tmp, div, -1);
-		free(tmp);
-		div->program = sh->sep[i];
-		div->execute[0] = "sh";
-		div->execute[1] = "-c";
-		div->execute[2] = sh->sep[i];
-		div->execute[3] = NULL;
-		// printf("in phaser = [%s]\n", div->execute[2]);
-		// select_program(sh, div);
-		div->pipe = sh->start;
-		sh->start = div;
+		data_execute(sh, div, i);
 	}
 	do_heredoc(sh, div, div->file, 0);
 }

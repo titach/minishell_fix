@@ -12,104 +12,104 @@
 
 #include "minishell.h"
 
-char    **copy_env(char **env, int i, int j)
+static int	check_error_export(char *cmd, int i)
 {
-    char **copy;
-
-    copy = (char **)malloc(sizeof(char *) * (ft_strlen2d(env)));
-    if (!copy)
-		exit(1);
-	while (env[++i] && env[i + 1])
+	if (ft_isalpha(cmd[0]) == 0)
+		return (1);
+	if (check_char(cmd, "=") == 0 && cmd[ft_strlen(cmd) - 1] == '-')
+		return (1);
+	i = 1;
+	while (cmd[i] && cmd[i] != '=')
 	{
-        copy[i] = ft_strdup(env[i]);
-        j = -1;
-        while (copy[i][++j])
-        {
-            if (copy[i][j] == '=')
-            {
-                copy[i][j] = 11;
-                break;
-            }
-        }
-    }
-	copy[i] = NULL;
-    return (copy);
+		if (cmd[i] == '+' && cmd[i + 1] == '=')
+			i++;
+		else if (ft_isalpha(cmd[i]) == 0
+			&& ft_isdigit(cmd[i]) == 0 && cmd[i] != '_')
+			return (1);
+		i++;
+	}
+	return (0);
 }
 
-void    export_stdout(t_phaser *sh, int i)
+static char	*set_new_cmd(char *cmd, int i)
 {
-    int fd;
-    char **tmp;
-    char    **tmp_en;
-
-    fd = open("/tmp/exp_file", O_CREAT | O_WRONLY | O_TRUNC, 0644);
-    if (fd == -1)
-	    error_func("can not open file.");
-    tmp_en = copy_env(sh->env, -1, -1);
-    // printf("do export3\n");
-    while (tmp_en[i])
-    {
-        write(fd, "declare -x ", 11);
-        tmp = ft_split(tmp_en[i], 11);
-        write(fd, tmp[0], ft_strlen(tmp[0]));
-        write(fd, "=", 1);
-        write(fd, "\"", 1);
-        if (tmp[1] != NULL)
-            write(fd, tmp[1], ft_strlen(tmp[1]));
-        write(fd, "\"", 1);
-		write(fd, "\n", 1);
-        i++;
-    }
-    ft_free_split(tmp);
-    ft_free_split(tmp_en);
-    close(fd);
-    // printf("do export4\n");
+	while (cmd[i])
+	{
+		if (cmd[i] == '+' && cmd[i + 1] == '=')
+		{
+			while (cmd[i])
+			{
+				cmd[i] = cmd[i + 1];
+				i++;
+			}
+			break ;
+		}
+		i++;
+	}
+	return (cmd);
 }
 
-void    export_stderr(t_cmd *div, int i)
+static void	do_export_cmd(t_phaser *sh, char *cmd, int i, char **temp)
 {
-    while (div->command[1][i])
-    {
-        if (i == 0)
-        {
-            if ((!(ft_isalpha(div->command[1][i]))))
-            {
-                msg_error_builtins("bash: export: `", div->command[1], "': not a valid identifier\n");
-                div->execute[2] = "cp 2> /dev/null";
-                break;
-            }
-        }
-        if (!(isalpha(div->command[1][i]) || isdigit(div->command[1][i]) || div->command[1][i] == '='))
-        {
-            msg_error_builtins("bash: export: `", div->command[1], "': not a valid identifier\n");
-            div->execute[2] = "cp 2> /dev/null";
-            break;
-        }
-        i++;
-    }
+	temp = ft_split(cmd, '=');
+	while (sh->env[i])
+	{
+		if (c_cmp(sh->env[i], temp[0], 1) == 0
+			&& (c_cmp(sh->env[i], temp[0], 2) == 0
+				|| c_cmp(sh->env[i], temp[0], 2) == 61))
+		{
+			if (check_char(sh->env[i], "=") == 1 && check_char(cmd, "=") == 0)
+			{
+				free(sh->env[i]);
+				sh->env[i] = ft_strjoin(temp[0], "=");
+			}
+			else
+			{
+				free(sh->env[i]);
+				sh->env[i] = ft_strdup(cmd);
+			}
+			break ;
+		}
+		i++;
+	}
+	if (sh->env[i] == NULL)
+		add_new_env(sh, cmd);
+	ft_free_split(temp);
 }
 
-void    do_export(t_phaser *sh, t_cmd *div)
+static void	msg_error_export(t_cmd *div, char *cmd, t_phaser *sh, int flag)
 {
-    // printf("main exp\n");
-    if (!div->command[1])
-    {
-        // printf("main exp\n");
-        export_stdout(sh, 0);
-        div->execute[2] = "cat /tmp/exp_file | sort";
-    }
-    else
-    {
-        // printf("%s\n", div->command[2]);
-        export_stderr(div, 0);
-        // printf("%s\n", div->command[2]);
-    }
-    // printf("%s\n", div->command[2]);
-    // if (ft_strnstr(div->command[2], "export", ft_strlen(div->command[2])))
-    // {
-    //     // printf("main expppp\n");
-    //     sh->export = 1;
-    // }
+	if (flag == 1)
+		msg_error_builtins("bash: export: `",
+			cmd, "': not a valid identifier\n");
+	div->execute[2] = "cp 2> /dev/null";
+	sh->exit = 1;
 }
 
-
+void	export_cmd(t_phaser *sh, t_cmd *div, int flag, int i)
+{
+	sh->exit = 0;
+	if (div->command[1] == NULL && flag == 1)
+		a_to_z(NULL, sh, 0, 0);
+	else if (div->command[1] != NULL)
+	{
+		i = 1;
+		while (div->command[i])
+		{
+			if (div->command[i] != NULL)
+			{
+				if (check_error_export(div->command[i], 0) == 1)
+					msg_error_export(div, div->command[i], sh, flag);
+				else if (flag == 0)
+				{
+					if (ft_strnstr(div->command[i], "+=",
+							ft_strlen(div->command[i])) != NULL)
+						div->command[i] = set_new_cmd(div->command[i], 0);
+					do_export_cmd(sh, div->command[i], 0, NULL);
+				}
+			}
+			i++;
+		}
+	}
+	div->execute[2] = "cp 2> /dev/null";
+}

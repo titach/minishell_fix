@@ -12,7 +12,7 @@
 
 #include "minishell.h"
 
-int check_file(t_file *file)
+static int	check_file(t_file *file)
 {
 	if (file->re == 1)
 	{
@@ -64,7 +64,7 @@ static int	directory_name(t_cmd *div)
 
 static int	select_program(char **en, int i)
 {
-	char **path;
+	char	**path;
 
 	while (*en && ft_strncmp(*en, "PATH=", 5) != 0)
 		en++;
@@ -73,7 +73,8 @@ static int	select_program(char **en, int i)
 	path = ft_split(*en + 5, ':');
 	while (path[i])
 	{
-		if (ft_strnstr(path[i], "/usr/bin", ft_strlen(path[i])) == 0 || ft_strnstr(path[i], "/bin", ft_strlen(path[i])) == 0)
+		if (ft_strnstr(path[i], "/usr/bin", ft_strlen(path[i])) == 0
+			|| ft_strnstr(path[i], "/bin", ft_strlen(path[i])) == 0)
 		{
 			ft_free_split(path);
 			return (1);
@@ -89,7 +90,7 @@ static int	commond_name(t_phaser *sh, t_cmd *div)
 	char	*bin;
 	char	*sbin;
 	int		flag;
-	
+
 	flag = 0;
 	if (select_program(sh->env, 0) == 0)
 		directory_name(div);
@@ -97,7 +98,8 @@ static int	commond_name(t_phaser *sh, t_cmd *div)
 	{
 		sbin = ft_strjoin("/usr/bin/", div->command[0]);
 		bin = ft_strjoin("/bin/", div->command[0]);
-		if (access(sbin, X_OK) == -1 || access(bin, X_OK) == -1)
+		if (access(sbin, X_OK) == -1 || access(bin, X_OK) == -1
+			|| div->command[0][0] == '\0')
 		{
 			msg_error(div->command[0], ": command not found\n", 0);
 			div->execute[2] = "/notfound 2> /dev/null";
@@ -109,23 +111,11 @@ static int	commond_name(t_phaser *sh, t_cmd *div)
 	return (flag);
 }
 
-int    check_command(t_phaser *sh, t_cmd *div)
+int	handle_all(t_phaser *sh, t_cmd *div, int flag, int hd)
 {
-	if (ft_strnstr(div->command[0], "/", ft_strlen(div->command[0])))
-		return (directory_name(div));
-	else
-		return (commond_name(sh, div));
-}
-
-int    handle_all(t_phaser *sh, t_cmd *div, int flag, int hd)
-{
-	t_file *file;
-	// int flag;
-	// int	hd;
+	t_file	*file;
 
 	file = div->file;
-	// flag = 0;
-	// hd = 0;
 	while (file)
 	{
 		if (file->re == 4)
@@ -134,14 +124,18 @@ int    handle_all(t_phaser *sh, t_cmd *div, int flag, int hd)
 		{
 			div->execute[2] = "cp 2> /dev/null";
 			flag = 1;
-			break;
+			break ;
 		}
 		file = file->next;
 	}
 	if (flag == 0 && select_builtins(div) == 0)
-		flag = check_command(sh, div);
+	{
+		if (ft_strnstr(div->command[0], "/", ft_strlen(div->command[0])))
+			flag = directory_name(div);
+		else
+			flag = commond_name(sh, div);
+	}
 	if (flag == 0 && hd == 1)
 		join_heredoc(div, -1);
-	// printf("%d\n", flag);
 	return (flag);
 }

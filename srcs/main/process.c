@@ -12,7 +12,7 @@
 
 #include "minishell.h"
 
-static void	create_pipe(t_phaser *sh, int j)
+static	void	create_pipe(t_phaser *sh, int j)
 {
 	if (j % 2 == 0)
 	{
@@ -77,7 +77,7 @@ static void	redirect_pipe(int fd[2], int flag)
 	}
 }
 
-void	subprocess_cons(t_phaser *sh, t_cmd *div, int i)
+static void	subprocess_cons(t_phaser *sh, t_cmd *div, int i)
 {
 	if (sh->pipe > 1)
 	{
@@ -100,35 +100,34 @@ void	subprocess_cons(t_phaser *sh, t_cmd *div, int i)
 	}
 	if (handle_all(sh, div, 0, 0) == 0)
 		do_builtins(sh, div);
-	// printf("%s\n", div->execute[2]);
 	execve("/bin/sh", div->execute, sh->env);
 }
 
-void    start_process(t_phaser *sh, t_cmd *div, int i, int j)
+void	start_process(t_phaser *sh, t_cmd *div, int i, int j)
 {
-	pid_t	*pids;
-	int		status;
-
-	pids = malloc(sizeof(pid_t) * sh->pipe);
+	sh->pids = malloc(sizeof(pid_t) * sh->pipe);
+	if (!sh->pids)
+		error_func("malloc error");
+	signal_init(2);
 	while (div)
 	{
 		if (j < sh->pipe - 1 && sh->pipe > 1)
 			create_pipe(sh, j);
-		pids[i] = fork();
-		if (pids[i] < 0)
+		sh->pids[i] = fork();
+		if (sh->pids[i] < 0)
 			error_func("fork");
-		else if (pids[i] == 0)
+		else if (sh->pids[i] == 0)
 			subprocess_cons(sh, div, i);
-		close_pipe(sh, i, sh->pipefd, sh->pipefd2);
-		i++;
+		close_pipe(sh, i++, sh->pipefd, sh->pipefd2);
 		j++;
 		div = div->pipe;
 	}
 	j = 0;
 	while (j < i)
-		waitpid(pids[j++], &status, 0);
-	sh->exit = WEXITSTATUS(status);
-	free(pids);
-	if (access("/tmp/exp_file", F_OK) == 0)
-		unlink("/tmp/exp_file");
+		waitpid(sh->pids[j++], &sh->status, 0);
+	if (g_ss > 0)
+		sh->exit = g_ss;
+	else
+		sh->exit = WEXITSTATUS(sh->status);
+	free(sh->pids);
 }

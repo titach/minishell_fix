@@ -5,10 +5,10 @@ LIBFT   = ./libft/libft.a
 HEADERS = minishell.h
 
 # รายการไฟล์ .c ที่ต้องคอมไพล์
-MAIN    = main.c utils.c process.c
-PHASER = phaser.c heredoc.c syntax.c
+MAIN    = main.c utils.c process.c signal.c
+PHASER = phaser.c heredoc.c syntax.c syntax_con.c phaser_env.c phaser_re.c phaser_utils.c
 HANDLE = error_func.c all_error.c
-BUILTINS = builtins.c echo.c env.c export.c
+BUILTINS = builtins.c echo.c env.c export.c exit.c cd.c unset.c built_utils.c
 
 SRCS = $(addsuffix , $(addprefix srcs/main/, $(MAIN))) \
 		$(addsuffix , $(addprefix srcs/phaser/, $(PHASER))) \
