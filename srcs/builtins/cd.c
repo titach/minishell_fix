@@ -17,15 +17,17 @@ static void	ms_cd_error(char *path, int i, t_phaser *sh, int flag)
 	if (flag == 1)
 	{
 		if (i == 1)
-		{
-			msg_error_builtins("bash: cd: `",
-				path, "': No such file or directory\n");
-		}
+			msg_error_builtins("bash: cd: ",
+				path, ": No such file or directory\n");
 		else if (i == 2)
-		{
 			msg_error_builtins("bash: ", "cd:",
 				" too many arguments\n");
-		}
+		else if (i == 3)
+			msg_error_builtins("bash: cd:", path,
+				": Permission denied\n");
+		else if (i == 4)
+			msg_error_builtins("bash: cd: ",
+				path, ": Not a directory\n");
 	}
 	sh->exit = 1;
 }
@@ -48,13 +50,28 @@ static char	*get_env(t_phaser *sh, char *en)
 
 static void	do_chdir(char *input, t_phaser *sh, int flag)
 {
+	DIR	*dir;
+
+	dir = NULL;
 	if (access(input, F_OK) == -1)
-		ms_cd_error(input, 1, sh, flag);
-	else
 	{
-		if (flag == 0)
-			chdir(input);
+		ms_cd_error(input, 1, sh, flag);
+		return ;
 	}
+	dir = opendir(input);
+	if (!dir)
+	{
+		ms_cd_error(input, 4, sh, flag);
+		return ;
+	}
+	closedir(dir);
+	if (access(input, X_OK) == -1)
+	{
+		ms_cd_error(input, 3, sh, flag);
+		return ;
+	}
+	if (flag == 0)
+		chdir(input);
 }
 
 static void	sep_cd(t_phaser *sh, t_cmd *div, char *oldpwd, int flag)
